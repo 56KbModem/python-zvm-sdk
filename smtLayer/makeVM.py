@@ -108,6 +108,10 @@ def createVM(rh):
         for i in range(1, rh.parms['cpuCnt']):
             dirLines.append("CPU %0.2X" % i)
 
+	# --DUCK--
+	# Probably need to add logic here to determine wheter
+	# or not we are dealing with DSCSI and if so, execute
+	# logic to find WWPN's for us.
     if 'ipl' in rh.parms:
         ipl_string = "IPL %s " % rh.parms['ipl']
 
