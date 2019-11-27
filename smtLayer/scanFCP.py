@@ -1,9 +1,14 @@
+#!/usr/bin/env python
+
 import subprocess # to call lsluns
 
 # --DUCK--
+# Create a new function to scan for free LUN's and
+# accompanying FCP devices.
+# THIS IS THE TEST VERSION!!!
 
-# Decode the bytestream given to us by the
-# subprocess call to from ascii to unicode
+# decode ascii stream to unicode 
+# for python interpreter to work with
 def concatenate(stream):
 	output = []
 	line = ""
@@ -16,9 +21,8 @@ def concatenate(stream):
 			line = ""
 	return output
 
-# Create a new function to scan for free LUN's and
-# accompanying FCP devices.
-def scanFCP(rh):
+#def scanFCP(rh):
+def scanFCP():
 	"""
 	Scan the SAN Fabric for LUN's that are free to image.
 
@@ -31,22 +35,52 @@ def scanFCP(rh):
 		Linux guests.
 
 	"""
+	fcps = []		# FCP channels
+	wwpns = []		# Worldwide Port Names
+	lun_ids = []	# Logical Unit Numbers
 	
-	rh.printSyslog("Enter scanFCP function")
-
 	# Scan for LUN's on the SAN network
 	if subprocess.call("lszfcp") != 0:
-		rh.results["overallRC"] = 3
-		rh.printSysLog("No FCP devices attached: " +
-			str(rh.results["overallRC"]))
+		print "No FCP devices attached"
+		exit(-1)
 	else:
-		scan_ouput = subprocess.check_output(["lsluns"])
-		if not scan_output:	# Cannot scan for luns failure
-			rh.results["overallRC"] = 3	# Return non-zero return code (exit with failure)
-			rh.printSysLog("Failed to scan for LUN's on the SAN fabric: " +
-				str(rh.results["overallRC"]))
-		else:
-			scan_output = concatenate(scan_output) # decode output to unicode
-			for line in scan_output:
-				if "port" in line:
-					wwpns = line.split('0x')[1].strip(':')
+#		f = open("lsluns.output", 'r')
+#		scan_output = f.readlines() # read contents of file line by line.
+		scan_output = subprocess.check_output(["lsluns"])
+		if not scan_output:
+			print "Failed to scan for LUN's on the SAN fabric"
+			exit(-1)
+
+		scan_output = concatenate(scan_output) # decode the output stream
+		for line in scan_output:
+			if "Scan" in line:
+				fcps.append(line.split("0.0.")[1])
+				continue
+			elif "Unable to send the REPORT_LUNS command to LUN." in line:
+				print("[DEBUG]: No LUN's found on this wwpn.")
+				continue
+			elif "port" in line:
+				wwpn = line.split("0x")[1].strip(':\n')
+				print "[DEBUG]: wwpn found 0x%s" % wwpn
+				wwpns.append("0x" + wwpn)
+			else:
+				lun = line.split("0x")[1].strip('\n')
+				lun_ids.append("0x" + lun)
+
+	print("FCP Devices: ")
+	for fcp in fcps:
+		print fcp
+
+	print("Worldwide Port Numbers: ")
+	for wwpn in wwpns:
+		print wwpn
+
+	print("Logical Unit Numbers: ")
+	for lun in lun_ids:
+		print lun
+
+	print "[+] DONE!"
+
+# this function declaration is just for testing purposes
+if __name__ == "__main__":
+	scanFCP()
