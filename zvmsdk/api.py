@@ -606,10 +606,11 @@ class SDKAPI(object):
                     LOG.error(errmsg)
                     raise exception.SDKInvalidInputFormat(msg=errmsg)
                 # 'disk_pool' format check
-				# --DUCK--
-				# Add logic to handle new DSCSI virtual
-				# disk pool definition
+                # --DUCK--
+                # Add logic to handle new DSCSI virtual
+                # disk pool definition
                 disk_pool = disk.get('disk_pool') or CONF.zvm.disk_pool
+                print("disk_pool: %s" % disk_pool) # DUCK
                 if ':' not in disk_pool or (disk_pool.split(':')[0].upper()
                     not in ['ECKD', 'FBA', 'DSCSI']):
                     errmsg = ("Invalid disk_pool input, it should be in format"

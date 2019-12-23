@@ -498,18 +498,26 @@ class SMTClient(object):
         if (disk_list and 'is_boot_disk' in disk_list[0] and
             disk_list[0]['is_boot_disk']):
             # we assume at least one disk exist, which means, is_boot_disk
-            # is true for exactly one disk.
-            rd += (' --ipl %s' % self._get_ipl_param(ipl_from))
+            # is true for exactly one disk. Direct SCSI should have a
+            # different IPL statement
+            # -- DUCK --
+            if disk_list[0]['disk_pool'].split(':')[0] == 'DSCSI':
+                rd += ' --ipl %s ' % CONF.zvm.default_fcp_vdev
+                rd += ' --iplParam'
+            else:
+                rd += (' --ipl %s' % self._get_ipl_param(ipl_from))
 
-            # load param for ipl
-            if ipl_param:
-                rd += ' --iplParam %s' % ipl_param
+                # load param for ipl
+                if ipl_param:
+                    rd += ' --iplParam %s' % ipl_param
 
-            if ipl_loadparam:
-                rd += ' --iplLoadparam %s' % ipl_loadparam
+                if ipl_loadparam:
+                    rd += ' --iplLoadparam %s' % ipl_loadparam
 
         action = "create userid '%s'" % userid
 
+#--DUCK--
+        print("[DEBUG]: RD: %s", rd)
         try:
             self._request(rd)
         except exception.SDKSMTRequestFailed as err:

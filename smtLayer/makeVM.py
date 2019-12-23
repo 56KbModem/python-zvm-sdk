@@ -92,9 +92,11 @@ def createVM(rh):
     """
 
     rh.printSysLog("Enter makeVM.createVM")
-
+    print("In createVM function inside makeVM.py!!!!")
     dirLines = []
-    dirLines.append("USER " + rh.userid + " " + rh.parms['pw'] +
+# --DUCK--
+#   dirLines.append("USER " + rh.userid + " " + rh.parms['pw'] +
+    dirLines.append("IDENTITY " + rh.userid + " " + rh.parms['pw'] +
          " " + rh.parms['priMemSize'] + " " +
          rh.parms['maxMemSize'] + " " + rh.parms['privClasses'])
     if 'profName' in rh.parms:
