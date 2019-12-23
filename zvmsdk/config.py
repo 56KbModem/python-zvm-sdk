@@ -174,6 +174,27 @@ Possible values:
 Sample root disk in user directory:
     MDISK 0100 <disktype> <start> <end> <volumelabel> <readwrite>
 '''),
+    Opt('default_fcp_vdev',
+        section='zvm',
+        default='5C51', # SCSI in leetspeak
+		help='''
+Virtual device number for root disk when using direct SCSI.
+
+When SDK deploys on guest, this will be the default value that will
+indicate a SCSI disk. This is also the device to IPL from after
+DEDICATE statements that will be made in the user directory.
+
+Possible values:
+    An integer in hex format, 16 bits max (0xFFFF i.e. 65535).
+    It should not conflict with other device numbers in the z/VM guest's
+    configuration, for example device numbers of the NICs or ephermal or
+    persistent disks.
+
+Sample root fcp device in the user directory:
+    DEDICATE 5C51 <RDEV>
+    SET LOADDEV <WWPN> <LUN> 0
+    IPL 5C51
+'''),
     Opt('user_default_max_cpu',
         section='zvm',
         default=32,
