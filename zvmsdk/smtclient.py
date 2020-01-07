@@ -502,8 +502,8 @@ class SMTClient(object):
             # different IPL statement
             # -- DUCK --
             if disk_list[0]['disk_pool'].split(':')[0] == 'DSCSI':
+                rd += ' --isSCSI %i' % True # isSCSI is true
                 rd += ' --ipl %s ' % CONF.zvm.default_fcp_vdev
-                rd += ' --iplParam'
             else:
                 rd += (' --ipl %s' % self._get_ipl_param(ipl_from))
 
@@ -516,8 +516,6 @@ class SMTClient(object):
 
         action = "create userid '%s'" % userid
 
-#--DUCK--
-        print("[DEBUG]: RD: %s", rd)
         try:
             self._request(rd)
         except exception.SDKSMTRequestFailed as err:
@@ -540,8 +538,9 @@ class SMTClient(object):
 
         # Continue to add disk
         if disk_list:
+            if disk_list[0]['disk_pool'].split(':')[0] != 'DSCSI':
             # Add disks for vm
-            return self.add_mdisks(userid, disk_list)
+                return self.add_mdisks(userid, disk_list)
 
     def _add_mdisk(self, userid, disk, vdev):
         """Create one disk for userid

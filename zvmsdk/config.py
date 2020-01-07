@@ -177,7 +177,7 @@ Sample root disk in user directory:
     Opt('default_fcp_vdev',
         section='zvm',
         default='5C51', # SCSI in leetspeak
-		help='''
+        help='''
 Virtual device number for root disk when using direct SCSI.
 
 When SDK deploys on guest, this will be the default value that will

@@ -71,6 +71,7 @@ keyOpsList = {
         '--showparms': ['showParms', 0, 0],
         '--iplParam': ['iplParam', 1, 2],
         '--iplLoadparam': ['iplLoadparam', 1, 2]},
+        '--isSCSI': ['isSCSI', 1,1],
     'HELP': {},
     'VERSION': {},
      }
@@ -92,7 +93,6 @@ def createVM(rh):
     """
 
     rh.printSysLog("Enter makeVM.createVM")
-    print("In createVM function inside makeVM.py!!!!")
     dirLines = []
 # --DUCK--
 #   dirLines.append("USER " + rh.userid + " " + rh.parms['pw'] +
@@ -110,31 +110,24 @@ def createVM(rh):
         for i in range(1, rh.parms['cpuCnt']):
             dirLines.append("CPU %0.2X" % i)
 
+#--DUCK--
+# Testing the whole request with a writeout
+    print("type of rh.parms: %s", type(rh.parms))
+    print(rh.parms.keys())
+    print(rh.parms.values())
+
     # --DUCK--
     # Probably need to add logic here to determine wheter
     # or not we are dealing with DSCSI and if so, execute
     # logic to find WWPN's for us.
-    if 'DSCSI' in rh.parms:
+    if 'isSCSI' in rh.parms:
+        print("It is SCSI!!!!\nIt is SCSI!!!!")
+        dirLines.append("DEDICATE 5C51 A110")
+        dirLines.append("DEDICATE 5C50 B110")
+        dirLines.append("SET LOADDEV %s %s" % ("0x5df1f3ee1728", "0x000a0000000"))
 
-        # use the WWPN and LUN ID given by user
-        if 'wwpn' in rh.parms and 'lun_id' in rh.parms:
-            dirLines.append("SET LOADDEV %s %s", rh.parms['wwpn'], rh.parms['lun_id'])
-
-        # Error out..?
-        elif 'wwpn' in rh.parms or 'lun_id' in rh.parms:
-            error = "Error: When dedicating WWPN and LUN ID by hand, both should be given in request body"
-
-        # No WWPN or LUN ID provided, try to allocate dynamically
-        else:
-            # Check for definitions in database
-            
-            
-#        dirLines.append("DEDICATE %s")
-#        dirLines.append("DEDICATE %s")
-#        dirLines.append("IPL %s" % scanFCP(rh)) # scanFCP shoul return WWPN - LUN string
-            dirLines.append("DEDICATE 5C51 A110")
-            dirLines.append("DEDICATE 5C50 B110")
-            dirLines.append("SET LOADDEV %s %s", rh.parms['wwpn'], rh.parms['lun_id'])
+        # Add IPL statement
+        dirLines.append("IPL %s" % rh.parms['ipl'])
 
     elif 'ipl' in rh.parms:
         ipl_string = "IPL %s " % rh.parms['ipl']
