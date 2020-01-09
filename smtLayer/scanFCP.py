@@ -35,10 +35,13 @@ def scanFCP():
         Linux guests.
 
     """
-    fcps = []        # FCP channels
-    wwpns = []        # Worldwide Port Names
-    lun_ids = []    # Logical Unit Numbers
-    
+   
+    fcp_channels = {}
+
+    # use strings as keys for multi-dimensional dict
+    last_fcp = ""
+    last_wwpn = ""
+ 
     # Scan for LUN's on the SAN network
     if subprocess.call("lszfcp") != 0:
         print "No FCP devices attached"
@@ -53,33 +56,28 @@ def scanFCP():
 
         scan_output = concatenate(scan_output) # decode the output stream
         for line in scan_output:
-            if "Scan" in line:
-                fcps.append(line.split("0.0.")[1])
+            if "Unable" in line: # scan has failed on this adapter
                 continue
-            elif "Unable to send the REPORT_LUNS command to LUN." in line:
-                print("[DEBUG]: No LUN's found on this wwpn.")
-                continue
+            elif "Scan" in line:
+                last_fcp = line.split("0.0.")[1].strip('\n') # parse the line to find fcp adapter
+                fcp_channels[last_fcp] = {}
             elif "port" in line:
-                wwpn = line.split("0x")[1].strip(':\n')
-                print "[DEBUG]: wwpn found 0x%s" % wwpn
-                wwpns.append("0x" + wwpn)
+                last_wwpn = line.split("0x")[1].strip(':\n')
+                last_wwpn = "0x" + last_wwpn # make string whole again
+                fcp_channels[last_fcp][last_wwpn] = []
             else:
                 lun = line.split("0x")[1].strip('\n')
-                lun_ids.append("0x" + lun)
+                lun = "0x" + lun # recreate true string
 
-    print("FCP Devices: ")
-    for fcp in fcps:
-        print fcp
+                if int(lun, 16) is not 0: # LUN ID 0x0000... should be omitted
+                    fcp_channels[last_fcp][last_wwpn].append(lun) # finally write this lun to our datastructure
 
-    print("Worldwide Port Numbers: ")
-    for wwpn in wwpns:
-        print wwpn
-
-    print("Logical Unit Numbers: ")
-    for lun in lun_ids:
-        print lun
-
-    print "[+] DONE!"
+    for key in fcp_channels:
+		print("FCP DEVICE: %s" % key)
+		for subkey in fcp_channels[key]:
+			print("WWPN: %s" % subkey)
+			for lun_id in fcp_channels[key][subkey]:
+				print("LUN ID: %s" % lun_id)
 
 # this function declaration is just for testing purposes
 if __name__ == "__main__":
