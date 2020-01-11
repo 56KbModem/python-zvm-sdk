@@ -47,8 +47,6 @@ def scanFCP():
         print "No FCP devices attached"
         exit(-1)
     else:
-#        f = open("lsluns.output", 'r')
-#        scan_output = f.readlines() # read contents of file line by line.
         scan_output = subprocess.check_output(["lsluns"])
         if not scan_output:
             print "Failed to scan for LUN's on the SAN fabric"
@@ -72,12 +70,7 @@ def scanFCP():
                 if int(lun, 16) is not 0: # LUN ID 0x0000... should be omitted
                     fcp_channels[last_fcp][last_wwpn].append(lun) # finally write this lun to our datastructure
 
-    for key in fcp_channels:
-		print("FCP DEVICE: %s" % key)
-		for subkey in fcp_channels[key]:
-			print("WWPN: %s" % subkey)
-			for lun_id in fcp_channels[key][subkey]:
-				print("LUN ID: %s" % lun_id)
+    return fcp_channels
 
 # this function declaration is just for testing purposes
 if __name__ == "__main__":
