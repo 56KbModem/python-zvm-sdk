@@ -19,6 +19,7 @@ from tempfile import mkstemp
 
 from smtLayer import generalUtils
 from smtLayer import msgs
+from smtLayer import scanFCP
 from smtLayer.vmUtils import invokeSMCLI
 
 modId = 'MVM'
@@ -70,8 +71,8 @@ keyOpsList = {
         '--setReservedMem': ['setReservedMem', 0, 0],
         '--showparms': ['showParms', 0, 0],
         '--iplParam': ['iplParam', 1, 2],
-        '--iplLoadparam': ['iplLoadparam', 1, 2]},
-        '--isSCSI': ['isSCSI', 1,1],
+        '--iplLoadparam': ['iplLoadparam', 1, 2],
+        '--isSCSI': ['isSCSI', 1,1]},
     'HELP': {},
     'VERSION': {},
      }
@@ -124,7 +125,7 @@ def createVM(rh):
         print("It is SCSI!!!!\nIt is SCSI!!!!")
         dirLines.append("DEDICATE 5C51 A110")
         dirLines.append("DEDICATE 5C50 B110")
-        dirLines.append("SET LOADDEV %s %s" % ("0x5df1f3ee1728", "0x000a0000000"))
+        dirLines.append("SET LOADDEV %s %s 0" % ("0x5df1f3ee1728", "0x000a0000000"))
 
         # Add IPL statement
         dirLines.append("IPL %s" % rh.parms['ipl'])
