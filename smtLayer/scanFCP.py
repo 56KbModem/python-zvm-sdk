@@ -74,4 +74,4 @@ def scanFCP():
 
 # this function declaration is just for testing purposes
 if __name__ == "__main__":
-    scanFCP()
+    print(scanFCP())
