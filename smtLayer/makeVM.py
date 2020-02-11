@@ -95,70 +95,84 @@ def createVM(rh):
 
     rh.printSysLog("Enter makeVM.createVM")
     dirLines = []
-# --DUCK--
-#   dirLines.append("USER " + rh.userid + " " + rh.parms['pw'] +
-    dirLines.append("IDENTITY " + rh.userid + " " + rh.parms['pw'] +
+    dirLines.append("USER " + rh.userid + " " + rh.parms['pw'] +
          " " + rh.parms['priMemSize'] + " " +
          rh.parms['maxMemSize'] + " " + rh.parms['privClasses'])
     if 'profName' in rh.parms:
         dirLines.append("INCLUDE " + rh.parms['profName'])
 
-    if 'maxCPU' in rh.parms:
-        dirLines.append("MACHINE ESA %i" % rh.parms['maxCPU'])
-
-    dirLines.append("CPU 00 BASE")
-    if 'cpuCnt' in rh.parms:
-        for i in range(1, rh.parms['cpuCnt']):
-            dirLines.append("CPU %0.2X" % i)
-
-#--DUCK--
-# Testing the whole request with a writeout
-    print("type of rh.parms: %s", type(rh.parms))
-    print(rh.parms.keys())
-    print(rh.parms.values())
-
-    # --DUCK--
-    # Probably need to add logic here to determine wheter
-    # or not we are dealing with DSCSI and if so, execute
-    # logic to find WWPN's for us.
+    # if it is direct-SCSI the order of
+    # DirMaint statements is very important.
+    # because of this an extra control flow tree is added.
     if 'isSCSI' in rh.parms:
-        print("It is SCSI!!!!\nIt is SCSI!!!!")
-        dirLines.append("DEDICATE 5C51 A110")
-        dirLines.append("DEDICATE 5C50 B110")
-        dirLines.append("SET LOADDEV %s %s 0" % ("0x5df1f3ee1728", "0x000a0000000"))
+        dirLines.append("LOADDEV PORT %s LUN %s BOOTPROG 0" % ("5df1f3ee1728", "000a0000000"))
+        priMem = rh.parms['priMemSize'].upper()
+        maxMem = rh.parms['maxMemSize'].upper()
+        if 'setReservedMem' in rh.parms and (priMem != maxMem):
+            reservedSize = getReservedMemSize(rh, priMem, maxMem)
+            if rh.results['overallRC'] != 0:
+                rh.printSysLog("Exit makeVM.createVM, rc: " +
+                       str(rh.results['overallRC']))
+                return rh.results['overallRC']
+            if reservedSize != '0M':
+                 dirLines.append("COMMAND DEF STOR RESERVED %s" % reservedSize)
 
-        # Add IPL statement
+        # IPL for DSCSI will be the FCP device.
+        # This has been handled beforehand and given
+        # with the IPL variable to makeVM.py
         dirLines.append("IPL %s" % rh.parms['ipl'])
 
-    elif 'ipl' in rh.parms:
-        ipl_string = "IPL %s " % rh.parms['ipl']
+        if 'maxCPU' in rh.parms:
+            dirLines.append("MACHINE ESA %i" % rh.parms['maxCPU'])
+        dirLines.append("CPU 00 BASE")
 
-        if 'iplParam' in rh.parms:
-            ipl_string += ("PARM %s " % rh.parms['iplParam'])
+        if 'cpuCnt' in rh.parms:
+            for i in range(1, rh.parms['cpuCnt']):
+                dirLines.append("CPU %0.2X" % i)
 
-        if 'iplLoadparam' in rh.parms:
-            ipl_string += ("LOADPARM %s " % rh.parms['iplLoadparam'])
+        dirLines.append("DEDICATE 5C51 A110")
+        dirLines.append("DEDICATE 5C50 B110")
 
-        dirLines.append(ipl_string)
+    else:
+        if 'maxCPU' in rh.parms:
+            dirLines.append("MACHINE ESA %i" % rh.parms['maxCPU'])
+        
+        dirLines.append("CPU 00 BASE")
+        if 'cpuCnt' in rh.parms:
+            for i in range(1, rh.parms['cpuCnt']):
+                dirLines.append("CPU %0.2X" % i)
 
-    if 'byUsers' in rh.parms:
-        for user in rh.parms['byUsers']:
-            dirLines.append("LOGONBY " + user)
+        if 'ipl' in rh.parms:
+            ipl_string = "IPL %s " % rh.parms['ipl']
 
-    priMem = rh.parms['priMemSize'].upper()
-    maxMem = rh.parms['maxMemSize'].upper()
-    if 'setReservedMem' in rh.parms and (priMem != maxMem):
-        reservedSize = getReservedMemSize(rh, priMem, maxMem)
-        if rh.results['overallRC'] != 0:
-            rh.printSysLog("Exit makeVM.createVM, rc: " +
-                   str(rh.results['overallRC']))
-            return rh.results['overallRC']
-        if reservedSize != '0M':
-            dirLines.append("COMMAND DEF STOR RESERVED %s" % reservedSize)
+            if 'iplParam' in rh.parms:
+                ipl_string += ("PARM %s " % rh.parms['iplParam'])
+
+            if 'iplLoadparam' in rh.parms:
+                ipl_string += ("LOADPARM %s " % rh.parms['iplLoadparam'])
+
+            dirLines.append(ipl_string)
+
+        if 'byUsers' in rh.parms:
+            for user in rh.parms['byUsers']:
+                dirLines.append("LOGONBY " + user)
+
+        priMem = rh.parms['priMemSize'].upper()
+        maxMem = rh.parms['maxMemSize'].upper()
+        if 'setReservedMem' in rh.parms and (priMem != maxMem):
+            reservedSize = getReservedMemSize(rh, priMem, maxMem)
+            if rh.results['overallRC'] != 0:
+                rh.printSysLog("Exit makeVM.createVM, rc: " +
+                       str(rh.results['overallRC']))
+                return rh.results['overallRC']
+            if reservedSize != '0M':
+                dirLines.append("COMMAND DEF STOR RESERVED %s" % reservedSize)
 
     # Construct the temporary file for the USER entry.
     fd, tempFile = mkstemp()
     to_write = '\n'.join(dirLines) + '\n'
+    # DUCK test output DirMaint file
+    print("DIRMAINT FILE: \n" + to_write.encode())
     os.write(fd, to_write.encode())
     os.close(fd)
 
