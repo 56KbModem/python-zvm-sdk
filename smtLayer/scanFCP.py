@@ -61,11 +61,9 @@ def scanFCP():
                 fcp_channels[last_fcp] = {}
             elif "port" in line:
                 last_wwpn = line.split("0x")[1].strip(':\n')
-                last_wwpn = "0x" + last_wwpn # make string whole again
                 fcp_channels[last_fcp][last_wwpn] = []
             else:
                 lun = line.split("0x")[1].strip('\n')
-                lun = "0x" + lun # recreate true string
 
                 if int(lun, 16) is not 0: # LUN ID 0x0000... should be omitted
                     fcp_channels[last_fcp][last_wwpn].append(lun) # finally write this lun to our datastructure
