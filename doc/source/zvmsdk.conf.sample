@@ -38,6 +38,28 @@
 #console_log_size=100
 
 
+# 
+# The interval time between 2 retries, in seconds.
+# 
+# This will take effect only when you set softstop_retries item.
+# What's more, the value of softstop_timeout/softstop_interval is
+# the times retried.
+#     
+# This param is optional
+#softstop_interval=5
+
+
+# 
+# The maximum time waiting until the guest shut down.
+# 
+# Sometimes, the shutdown action will take a bit lone time to complete.
+# If you want to make sure the guest in shut-down status after executing action
+# of softstop, this will help.
+#     
+# This param is optional
+#softstop_timeout=60
+
+
 [image]
 
 # 
@@ -269,6 +291,28 @@
 #     
 # This param is optional
 #default_admin_userid=None
+
+
+# 
+# Virtual device number for root disk when using direct SCSI.
+# 
+# When SDK deploys on guest, this will be the default value that will
+# indicate a SCSI disk. This is also the device to IPL from after
+# DEDICATE statements that will be made in the user directory.
+# 
+# Possible values:
+#     An integer in hex format, 16 bits max (0xFFFF i.e. 65535).
+#     It should not conflict with other device numbers in the z/VM guest's
+#     configuration, for example device numbers of the NICs or ephermal or
+#     persistent disks.
+# 
+# Sample root fcp device in the user directory:
+#     DEDICATE 5C51 <RDEV>
+#     SET LOADDEV <WWPN> <LUN> 0
+#     IPL 5C51
+# 
+# This param is optional
+#default_fcp_vdev=5C51
 
 
 # 
