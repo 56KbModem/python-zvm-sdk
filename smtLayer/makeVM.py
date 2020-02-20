@@ -72,7 +72,7 @@ keyOpsList = {
         '--showparms': ['showParms', 0, 0],
         '--iplParam': ['iplParam', 1, 2],
         '--iplLoadparam': ['iplLoadparam', 1, 2],
-        '--isSCSI': ['isSCSI', 1,1]},
+        '--isSCSI': ['isSCSI', 1,1],
         '--dedicate': ['dedicate', 1, 2],
         '--loadportname': ['loadportname', 1, 2],
         '--loadlun': ['loadlun', 1, 2]},
