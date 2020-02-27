@@ -132,6 +132,16 @@ loaddev = {
     'additionalProperties': False
 }
 
+dedicate_vdevs = {
+    'type': 'array',
+    'minItems': 0,
+    'items': {
+        'type': 'string',
+        'pattern': '^[0-9a-fA-F]{,4}$'
+    },
+    'uniqueItems': True
+}
+
 positive_integer = {
     'type': ['integer', 'string'],
     'pattern': '^[0-9]*$', 'minimum': 1
@@ -353,7 +363,7 @@ disk_conf = {
 # For ubuntu linux, it will match ubuntuX, ubuntuX.Y, ubuntuX.Y.Z,
 # where X is 16, Y is 01 to 10, Z is 0 to 9, such as ubuntu16.04.3,
 # all case insensitive
-# For red hat cores linux, it will match rhcosX, where X is 4, 
+# For red hat cores linux, it will match rhcosX, where X is 4,
 # such as rhcos4, all case insensitive
 os_version = {
 'oneOf': [
@@ -538,7 +548,7 @@ max_mem = {
 hostname = {
     'oneOf': [
         {'type': 'null'},
-        {'type': 'string', 'minLength': 1, 'maxLength': 255, 
-        'pattern': '^[a-zA-Z0-9-._]*$',}
+        {'type': 'string', 'minLength': 1, 'maxLength': 255,
+         'pattern': '^[a-zA-Z0-9-._]*$'}
     ]
 }

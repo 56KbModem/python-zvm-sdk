@@ -32,7 +32,7 @@ create = {
                 'ipl_from': parameter_types.ipl_from,
                 'ipl_param': parameter_types.ipl_param,
                 'ipl_loadparam': parameter_types.ipl_loadparam,
-                'dedicate_vdevs': parameter_types.vdev_list,
+                'dedicate_vdevs': parameter_types.dedicate_vdevs,
                 'loaddev': parameter_types.loaddev
             },
             'required': ['userid', 'vcpus', 'memory'],
@@ -196,6 +196,7 @@ deploy = {
         'remotehost': parameter_types.remotehost,
         'vdev': parameter_types.vdev,
         'hostname': parameter_types.hostname,
+        'skipdiskcopy': parameter_types.boolean,
     },
     'required': ['image'],
     'additionalProperties': False,
@@ -247,8 +248,17 @@ register_vm = {
     'properties': {
         'meta': {'type': ['string']},
         'net_set': {'type': ['string']},
+        'port': {'type': ['string']},
     },
     'required': ['meta', 'net_set'],
+    'additionalProperties': True
+}
+
+deregister_vm = {
+    'type': 'object',
+    'properties': {
+        'userid': parameter_types.userid,
+    },
     'additionalProperties': False
 }
 

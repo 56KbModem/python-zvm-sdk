@@ -106,20 +106,19 @@ class NetworkOPS(object):
         if os_version.lower().startswith('rhcos'):
             linuxdist = self._dist_manager.get_linux_dist(os_version)()
             linuxdist.create_coreos_parameter(network_info, userid)
-        else: 
+        else:
             network_file_path = self._smtclient.get_guest_temp_path(userid)
-            LOG.debug('Creating folder %s to contain network configuration files'
-                      % network_file_path)
-            # check whether network interface has already been set for the guest
-            # if not, means this the first time to set the network interface
+            LOG.debug('Creating folder %s to contain network configuration '
+                      'files' % network_file_path)
+            # check whether network interface has already been set for the
+            # guest. If not, means this is the first time to set the network
+            # interface
             first = self._smtclient.is_first_network_config(userid)
             (network_doscript, active_cmds) = self._generate_network_doscript(
-                                                               userid,
-                                                               os_version,
-                                                               network_info,
-                                                               network_file_path,
-                                                               first,
-                                                               active=active)
+                                                    userid, os_version,
+                                                    network_info,
+                                                    network_file_path,
+                                                    first, active=active)
             fileClass = "X"
             try:
                 self._smtclient.punch_file(userid, network_doscript, fileClass)
@@ -232,7 +231,8 @@ class NetworkOPS(object):
             target_path = file['target_path']
             source_file = file['source_file']
             # potential risk: whether target_path exist
-            command += 'mv ' + source_file + ' ' + target_path + '\n'
+            # using cat does not change the target file selinux file type
+            command += 'cat ' + source_file + ' > ' + target_path + '\n'
 
         command += 'sleep 2\n'
         command += '/bin/bash /tmp/znetconfig.sh\n'
