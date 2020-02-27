@@ -13,8 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from ..zvmsdk import config
-from ..zvmsdk import log
+from zvmsdk import config
+from zvmsdk import log
 
 
 if __name__ == '__main__':
