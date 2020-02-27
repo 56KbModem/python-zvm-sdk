@@ -217,6 +217,8 @@ errors = {
                21: "Image Export error: Failed to copy image file to remote "
                    "host with reason: %(msg)s",
                22: "Export image to local file system failed: %(err)s",
+               23: "Image file of %(img)s does not exist, "
+                   "so failed to get its timestamp.",
                },
               "Operation on Image failed"
               ],
@@ -226,6 +228,8 @@ errors = {
                 3: "Volume %(vol)s has already been attached on instance "
                    "%(inst)s",
                 4: "Volume %(vol)s is not attached on instance %(inst)s",
+                5: "Refresh bootmap fails, error code: %(errcode)s and "
+                   "reason: %(errmsg)s",
                 },
                "Operation on Volume failed"
                ],
