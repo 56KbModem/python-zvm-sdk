@@ -282,6 +282,8 @@ class FCPDbOperator(object):
             'connections    integer,',  # 0 means no assigner
             'reserved       integer,',  # 0 for not reserved
             'path           integer,',  # 0 or path0, 1 for path1
+			'lun            integer,',
+			'portname       integer,',
             'comment        varchar(128))'))
         with get_fcp_conn() as conn:
             conn.execute(sql)

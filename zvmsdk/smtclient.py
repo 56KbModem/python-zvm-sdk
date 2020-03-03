@@ -74,6 +74,7 @@ class SMTClient(object):
         self._NetDbOperator = database.NetworkDbOperator()
         self._GuestDbOperator = database.GuestDbOperator()
         self._ImageDbOperator = database.ImageDbOperator()
+		self._FCPDbOperator = database.FCPDbOperator()
 
     def _request(self, requestData):
         try:
@@ -523,12 +524,14 @@ class SMTClient(object):
         if (disk_list and 'is_boot_disk' in disk_list[0] and
             disk_list[0]['is_boot_disk']) or ipl_from:
             # we assume at least one disk exist, which means, is_boot_disk
-            # is true for exactly one disk. Direct SCSI should have a
+            # is true for exactly one disk. Dynamic Direct SCSI should have a
             # different IPL statement
-            # -- DUCK --
-            if disk_list[0]['disk_pool'].split(':')[0] == 'DSCSI':
+            if disk_list[0]['disk_pool'].split(':')[0] == 'DSCSI' and not dedicate_vdevs:
                 rd += ' --isSCSI %i' % True # isSCSI is true
                 rd += ' --ipl %s ' % CONF.zvm.default_fcp_vdev
+
+				new_boot_config = self._FCPDbOperator.scanFCP()
+	
             else:
                 rd += (' --ipl %s' % self._get_ipl_param(ipl_from))
 
