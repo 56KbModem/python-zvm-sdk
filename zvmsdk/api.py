@@ -199,6 +199,54 @@ class SDKAPI(object):
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._vmops.get_info(userid)
 
+    def guest_get_power_state_real(self, userid):
+        """Returns power state of a virtual machine from hypervisor."""
+        action = "get power state of guest '%s' from hypervisor" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._vmops.get_power_state(userid)
+
+    def guest_get_adapters_info(self, userid):
+        """Get the network information of a virtual machine.
+        this userid may not in zCC.
+
+        :param str userid: the id of the virtual machine
+
+        :returns: Dictionary contains:
+                  ip: (str) the IP address of the virtual machine
+                  mac: (str) the MAC address of the virtual machine
+        """
+        action = "get network info of guest '%s'" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._vmops.get_adapters_info(userid)
+
+    def guest_get_user_direct(self, userid):
+        """Get user direct of the specified guest vm
+
+        :param str userid: the user id of the guest vm
+        :returns: Dictionary describing user direct and check info result
+        :rtype: dict
+        """
+        action = "get the user direct of guest '%s'" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            inst_info = self._vmops.get_definition_info(userid)
+            user_direct = inst_info['user_direct']
+            item = -1
+            new_info = ""
+            for info in user_direct:
+                item += 1
+                # replace password with ******
+                if info.startswith('USER') or info.startswith('IDENTITY'):
+                    fields = info.split()
+                    for i in range(len(fields)):
+                        if i != 2:
+                            new_info += (fields[i] + ' ')
+                        else:
+                            new_info += ('******' + ' ')
+                    user_direct[item] = new_info
+                    break
+            inst_info['user_direct'] = user_direct
+            return inst_info
+
     def guest_list(self):
         """list names of all the VMs on this host.
 
@@ -216,6 +264,14 @@ class SDKAPI(object):
         action = "get host information"
         with zvmutils.log_and_reraise_sdkbase_error(action):
             return self._hostops.get_info()
+
+    def host_get_guest_list(self):
+        """list names of all the VMs on the host.
+        :returns: names of the vm on this hypervisor, in a list.
+        """
+        action = "list guests on the host"
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            return self._hostops.guest_list()
 
     def host_diskpool_get_info(self, disk_pool=None):
         """ Retrieve diskpool information.
@@ -1399,14 +1455,16 @@ class SDKAPI(object):
         """
         self._volumeop.attach_volume_to_instance(connection_info)
 
-    def volume_refresh_bootmap(self, fcpchannels, wwpns, lun):
+    def volume_refresh_bootmap(self, fcpchannels, wwpns, lun, skipzipl=False):
         """ Refresh a volume's bootmap info.
 
         :param list of fcpchannels
         :param list of wwpns
         :param string lun
+        :param boolean skipzipl: whether ship zipl, only return physical wwpns
         """
-        return self._volumeop.volume_refresh_bootmap(fcpchannels, wwpns, lun)
+        return self._volumeop.volume_refresh_bootmap(fcpchannels, wwpns, lun,
+                                                     skipzipl=skipzipl)
 
     def volume_detach(self, connection_info):
         """ Detach a volume from a guest. It's prerequisite to active multipath
