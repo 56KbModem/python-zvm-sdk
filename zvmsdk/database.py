@@ -21,6 +21,7 @@ import threading
 import uuid
 import json
 
+from zvmsdk import scanFCP
 from zvmsdk import config
 from zvmsdk import constants as const
 from zvmsdk import exception
@@ -282,8 +283,8 @@ class FCPDbOperator(object):
             'connections    integer,',  # 0 means no assigner
             'reserved       integer,',  # 0 for not reserved
             'path           integer,',  # 0 or path0, 1 for path1
-			'lun            integer,',
-			'portname       integer,',
+            'lun_id         integer,',
+            'portname       integer,',
             'comment        varchar(128))'))
         with get_fcp_conn() as conn:
             conn.execute(sql)
@@ -479,6 +480,46 @@ class FCPDbOperator(object):
             fcp_list = result.fetchall()
 
         return fcp_list
+
+	def _return_directSCSI(self):
+        result = conn.execute("SELECT wwpn, lun_id, fcp_id"
+                              "FROM fcp WHERE connections=0 AND reserved=0"
+                              "order by fcp_id")
+
+		free_definitions = result.fetch_all()
+		return free_definitions
+
+
+    def scanFCP(self):
+        with get_fcp_conn() as conn:
+
+        # check if we already have free 
+        # WWPN/LUN/FCP pairs to use 
+        # for direct SCSI
+        result = conn.execute("SELECT wwpn, lun_id, fcp_id FROM fcp where reserved=0"
+                              "AND connections=0")
+        is_free = result.fetchall
+        if is_free == None:
+            # The database has no WWPN or LUN definitions
+            # we will scan the SAN fabric / update DB
+            boot_triplets = scanFCP.scanFCP():
+            if boot_triplets:
+                for adapter in boot_triplets:
+                    for wwpn in boot_triplets[adapter]:
+                        index = 0
+                        if boot_triplets[adapter][wwpn]: # exempt empty lists
+                            for lun in boot_triplets[adapter][wwpn]:
+                                conn.execute("INSERT INTO fcp (wwpn, lun_id) VALUES"
+                                             "(?, ?) WHERE wwpn IS NULL AND lun_id IS NULL"
+                                             " AND reserved=0", (wwpn, lun))
+
+				return _self._return_directSCSI()
+
+            else: # scan failed
+                return None
+
+        else:
+			return _return_directSCSI()
 
 
 class ImageDbOperator(object):

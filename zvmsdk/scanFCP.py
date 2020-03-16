@@ -26,9 +26,6 @@ def scanFCP():
     """
     Scan the SAN Fabric for LUN's that are free to image.
 
-    Input:
-        Request Handle
-
     OutPut:
         This function will update the database with free
         FCP/WWPN/LUN triplets available for deploying new
@@ -45,12 +42,12 @@ def scanFCP():
     # Scan for LUN's on the SAN network
     if subprocess.call("lszfcp") != 0:
         print "No FCP devices attached"
-        exit(-1)
+        return False
     else:
         scan_output = subprocess.check_output(["lsluns"])
         if not scan_output:
             print "Failed to scan for LUN's on the SAN fabric"
-            exit(-1)
+            return False
 
         scan_output = concatenate(scan_output) # decode the output stream
         for line in scan_output:
