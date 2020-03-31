@@ -19,7 +19,6 @@ from tempfile import mkstemp
 
 from smtLayer import generalUtils
 from smtLayer import msgs
-from smtLayer import scanFCP
 from smtLayer.vmUtils import invokeSMCLI
 
 modId = 'MVM'
@@ -109,7 +108,8 @@ def createVM(rh):
     # DirMaint statements is very important.
     # because of this an extra control flow tree is added.
     if 'isSCSI' in rh.parms:
-        dirLines.append("LOADDEV PORT %s LUN %s BOOTPROG 0" % ("5df1f3ee1728", "000a0000000"))
+        dirLines.append("LOADDEV PORT %s LUN %s BOOTPROG 0" % (rh.parms['loadportname'],
+                                                                rh.parms['loadlun']))
         priMem = rh.parms['priMemSize'].upper()
         maxMem = rh.parms['maxMemSize'].upper()
         if 'setReservedMem' in rh.parms and (priMem != maxMem):
@@ -134,8 +134,7 @@ def createVM(rh):
             for i in range(1, rh.parms['cpuCnt']):
                 dirLines.append("CPU %0.2X" % i)
 
-        dirLines.append("DEDICATE 5C51 A110")
-        dirLines.append("DEDICATE 5C50 B110")
+        dirLines.append("DEDICATE 5C51 %s" % rh.parms['dedicate'])
 
     else:
         if 'maxCPU' in rh.parms:
@@ -172,25 +171,31 @@ def createVM(rh):
             if reservedSize != '0M':
                 dirLines.append("COMMAND DEF STOR RESERVED %s" % reservedSize)
 
-    if 'loadportname' in rh.parms:
-        wwpn = rh.parms['loadportname'].replace("0x", "")
-        dirLines.append("LOADDEV PORTname %s" % wwpn)
+        if 'loadportname' in rh.parms:
+            wwpn = rh.parms['loadportname'].replace("0x", "")
+            dirLines.append("LOADDEV PORTname %s" % wwpn)
 
-    if 'loadlun' in rh.parms:
-        lun = rh.parms['loadlun'].replace("0x", "")
-        dirLines.append("LOADDEV LUN %s" % lun)
+        if 'loadlun' in rh.parms:
+            lun = rh.parms['loadlun'].replace("0x", "")
+            dirLines.append("LOADDEV LUN %s" % lun)
 
-    if 'dedicate' in rh.parms:
-        vdevs = rh.parms['dedicate'].split()
-        # add a DEDICATE statement for each vdev
-        for vdev in vdevs:
-            dirLines.append("DEDICATE %s %s" % (vdev, vdev))
+        if 'dedicate' in rh.parms and not 'isSCSI' in rh.parms:
+            vdevs = rh.parms['dedicate'].split()
+            # add a DEDICATE statement for each vdev
+            for vdev in vdevs:
+                dirLines.append("DEDICATE %s %s" % (vdev, vdev))
 
     # Construct the temporary file for the USER entry.
     fd, tempFile = mkstemp()
     to_write = '\n'.join(dirLines) + '\n'
     os.write(fd, to_write.encode())
     os.close(fd)
+    # --DUCK--
+#    print("[DEBUG]: dedicate: {}".format(rh.parms['dedicate']))
+#    print("[DEBUG]: typeof dedicate: {}".format(type(rh.parms['dedicate'])))
+#    print("[DEBUG]: dirLines: ")
+    for line in dirLines:
+        print(line)
 
     parms = ["-T", rh.userid, "-f", tempFile]
     results = invokeSMCLI(rh, "Image_Create_DM", parms)

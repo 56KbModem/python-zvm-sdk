@@ -74,7 +74,7 @@ class SMTClient(object):
         self._NetDbOperator = database.NetworkDbOperator()
         self._GuestDbOperator = database.GuestDbOperator()
         self._ImageDbOperator = database.ImageDbOperator()
-		self._FCPDbOperator = database.FCPDbOperator()
+        self._FCPDbOperator = database.FCPDbOperator()
 
     def _request(self, requestData):
         try:
@@ -594,8 +594,23 @@ class SMTClient(object):
                 rd += ' --isSCSI %i' % True # isSCSI is true
                 rd += ' --ipl %s ' % CONF.zvm.default_fcp_vdev
 
-				new_boot_config = self._FCPDbOperator.scanFCP()
-	
+                new_boot_config = self._FCPDbOperator.scanFCP()
+                if new_boot_config == None:
+                    msg = "Failed to dynamically add SCSI disk"
+                    raise exception.SDKObjectNotExistError(obj_desc=msg, modID="guest")
+                else:
+                    rd += ' --loadportname {}'.format(hex(new_boot_config["portname"]).strip("0x"))
+                    if len(str(new_boot_config["lun_id"])) < 16:
+                        lun_id = '0' + str(hex(new_boot_config["lun_id"])).strip("0x")
+                        lun_id += "0" * (16 - len(lun_id))
+                        rd += ' --loadlun {}'.format(lun_id)
+                    else:
+                        rd += ' --loadlun {}'.format(hex(new_boot_config["lun_id"]).strip("0x"))
+                    rd += ' --dedicate {}'.format(new_boot_config["fcp_id"])
+
+                # --DUCK--
+                print("[+] BOOT CONFIG: {}".format(new_boot_config))
+    
             else:
                 rd += (' --ipl %s' % self._get_ipl_param(ipl_from))
 
@@ -2144,6 +2159,11 @@ class SMTClient(object):
         action = "delete guest %s from database" % userid
         with zvmutils.log_and_reraise_sdkbase_error(action):
             self._GuestDbOperator.delete_guest_by_userid(userid)
+
+        # clean up db record from fcp table if exists
+        action = "delete guest %s from FCP table" % userid
+        with zvmutils.log_and_reraise_sdkbase_error(action):
+            self._FCPDbOperator.delete_fcp_by_userid(userid)
 
     def execute_cmd(self, userid, cmdStr):
         """"cmdVM."""

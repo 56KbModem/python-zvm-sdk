@@ -481,45 +481,62 @@ class FCPDbOperator(object):
 
         return fcp_list
 
-	def _return_directSCSI(self):
-        result = conn.execute("SELECT wwpn, lun_id, fcp_id"
-                              "FROM fcp WHERE connections=0 AND reserved=0"
-                              "order by fcp_id")
+    def delete_fcp_by_userid(self, userid):
+        with get_fcp_conn() as conn:
+            conn.execute(
+                "UPDATE fcp set reserved = 0, assigner_id = '' WHERE assigner_id=?", (userid))
 
-		free_definitions = result.fetch_all()
-		return free_definitions
 
+    def _return_directSCSI(self):
+        with get_fcp_conn() as conn:
+            result = conn.execute("SELECT portname, lun_id, fcp_id "
+                                  "FROM fcp WHERE connections=0 AND reserved=0 "
+                                  "order by fcp_id")
+
+            free_definitions = result.fetchall()
+            if len(free_definitions) == 0:
+                LOG.info("no more fcp to be allocated")
+                return None
+            else:
+                new_boot_config = {"portname": 0, "lun_id": 0, "fcp_id": 0}
+                new_boot_config["portname"] = free_definitions[0][0]
+                new_boot_config["lun_id"] = free_definitions[0][1]
+                new_boot_config["fcp_id"] = free_definitions[0][2]
+
+                # Make this selection reserved
+                self._update_reserve(free_definitions[0][2], 1)
+                return new_boot_config
 
     def scanFCP(self):
         with get_fcp_conn() as conn:
 
-        # check if we already have free 
-        # WWPN/LUN/FCP pairs to use 
-        # for direct SCSI
-        result = conn.execute("SELECT wwpn, lun_id, fcp_id FROM fcp where reserved=0"
-                              "AND connections=0")
-        is_free = result.fetchall
-        if is_free == None:
-            # The database has no WWPN or LUN definitions
-            # we will scan the SAN fabric / update DB
-            boot_triplets = scanFCP.scanFCP():
-            if boot_triplets:
-                for adapter in boot_triplets:
-                    for wwpn in boot_triplets[adapter]:
-                        index = 0
-                        if boot_triplets[adapter][wwpn]: # exempt empty lists
-                            for lun in boot_triplets[adapter][wwpn]:
-                                conn.execute("INSERT INTO fcp (wwpn, lun_id) VALUES"
-                                             "(?, ?) WHERE wwpn IS NULL AND lun_id IS NULL"
-                                             " AND reserved=0", (wwpn, lun))
+            # check if we already have free 
+            # WWPN/LUN/FCP pairs to use 
+            # for direct SCSI
+            result = conn.execute("SELECT portname, lun_id, fcp_id FROM fcp where reserved=0 "
+                                  "AND connections=0")
+            is_free = result.fetchall()
+            if not is_free:
+                # The database has no WWPN or LUN definitions
+                # we will scan the SAN fabric / update DB
+                boot_triplets = scanFCP.scanFCP()
+                if boot_triplets:
+                    for adapter in boot_triplets:
+                        for wwpn in boot_triplets[adapter]:
+                            index = 0
+                            if boot_triplets[adapter][wwpn]: # exempt empty lists
+                                for lun in boot_triplets[adapter][wwpn]:
+                                    conn.execute("INSERT INTO fcp (portname, lun_id) VALUES "
+                                                 "(?, ?) WHERE portname IS NULL AND lun_id IS NULL "
+                                                 "AND reserved=0", (wwpn, lun))
 
-				return _self._return_directSCSI()
+                    return self._return_directSCSI()
 
-            else: # scan failed
-                return None
+                else: # scan failed
+                    return None
 
-        else:
-			return _return_directSCSI()
+            else:
+                return self._return_directSCSI()
 
 
 class ImageDbOperator(object):
