@@ -484,10 +484,11 @@ class FCPDbOperator(object):
     def delete_fcp_by_userid(self, userid):
         with get_fcp_conn() as conn:
             conn.execute(
-                "UPDATE fcp set reserved = 0, assigner_id = '' WHERE assigner_id=?", (userid))
+                 "UPDATE fcp set reserved = 0, assigner_id = '', connections = 0 " 
+                  "WHERE assigner_id=?", (userid,))
 
 
-    def _return_directSCSI(self):
+    def _return_directSCSI(self, userid):
         with get_fcp_conn() as conn:
             result = conn.execute("SELECT portname, lun_id, fcp_id "
                                   "FROM fcp WHERE connections=0 AND reserved=0 "
@@ -495,7 +496,7 @@ class FCPDbOperator(object):
 
             free_definitions = result.fetchall()
             if len(free_definitions) == 0:
-                LOG.info("no more fcp to be allocated")
+                LOG.warning("Warning: no more fcp's to be allocated")
                 return None
             else:
                 new_boot_config = {"portname": 0, "lun_id": 0, "fcp_id": 0}
@@ -504,10 +505,11 @@ class FCPDbOperator(object):
                 new_boot_config["fcp_id"] = free_definitions[0][2]
 
                 # Make this selection reserved
-                self._update_reserve(free_definitions[0][2], 1)
+                self._update_reserve(new_boot_config["fcp_id"], 1)
+                self.assign(new_boot_config["fcp_id"], userid)
                 return new_boot_config
 
-    def scanFCP(self):
+    def scanFCP(self, userid):
         with get_fcp_conn() as conn:
 
             # check if we already have free 
@@ -528,15 +530,16 @@ class FCPDbOperator(object):
                                 for lun in boot_triplets[adapter][wwpn]:
                                     conn.execute("INSERT INTO fcp (portname, lun_id) VALUES "
                                                  "(?, ?) WHERE portname IS NULL AND lun_id IS NULL "
-                                                 "AND reserved=0", (wwpn, lun))
+                                                 "AND reserved=0", (wwpn, lun,))
 
-                    return self._return_directSCSI()
+                    return self._return_directSCSI(userid)
 
                 else: # scan failed
+                    LOG.warning("Warning: SAN Fabric not scannable.")
                     return None
 
             else:
-                return self._return_directSCSI()
+                return self._return_directSCSI(userid)
 
 
 class ImageDbOperator(object):

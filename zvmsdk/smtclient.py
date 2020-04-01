@@ -594,7 +594,7 @@ class SMTClient(object):
                 rd += ' --isSCSI %i' % True # isSCSI is true
                 rd += ' --ipl %s ' % CONF.zvm.default_fcp_vdev
 
-                new_boot_config = self._FCPDbOperator.scanFCP()
+                new_boot_config = self._FCPDbOperator.scanFCP(userid)
                 if new_boot_config == None:
                     msg = "Failed to dynamically add SCSI disk"
                     raise exception.SDKObjectNotExistError(obj_desc=msg, modID="guest")
