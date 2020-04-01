@@ -192,7 +192,7 @@ Possible values:
 
 Sample root fcp device in the user directory:
     DEDICATE 5C51 <RDEV>
-    SET LOADDEV <WWPN> <LUN> 0
+    SET LOADDEV PORT <WWPN> LUN <LUN> 0
     IPL 5C51
 '''),
     Opt('user_default_max_cpu',
