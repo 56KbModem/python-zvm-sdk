@@ -2,10 +2,8 @@
 
 import subprocess # to call lsluns
 
-# --DUCK--
 # Create a new function to scan for free LUN's and
 # accompanying FCP devices.
-# THIS IS THE TEST VERSION!!!
 
 # decode ascii stream to unicode 
 # for python interpreter to work with
@@ -67,6 +65,5 @@ def scanFCP():
 
     return fcp_channels
 
-# this function declaration is just for testing purposes
-if __name__ == "__main__":
-    print(scanFCP())
+if __name__ == '__main__':
+	print(scanFCP())

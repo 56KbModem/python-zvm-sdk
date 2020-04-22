@@ -328,6 +328,7 @@ class FCPDbOperatorTestCase(base.SDKTestCase):
             self.db_op.delete('1111')
             self.db_op.delete('2222')
 
+
     def test_assign(self):
         self.db_op.new('1111', 0)
 

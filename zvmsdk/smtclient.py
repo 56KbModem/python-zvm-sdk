@@ -597,17 +597,12 @@ class SMTClient(object):
                     msg = "Failed to dynamically add SCSI disk"
                     raise exception.SDKObjectNotExistError(obj_desc=msg, modID="guest")
                 else:
-                    rd += ' --loadportname {}'.format(hex(new_boot_config["portname"]).strip("0x"))
-                    if len(str(new_boot_config["lun_id"])) < 16:
-                        lun_id = '0' + str(hex(new_boot_config["lun_id"])).strip("0x")
-                        lun_id += "0" * (16 - len(lun_id))
-                        rd += ' --loadlun {}'.format(lun_id)
-                    else:
-                        rd += ' --loadlun {}'.format(hex(new_boot_config["lun_id"]).strip("0x"))
+                    rd += ' --loadportname {}'.format(new_boot_config["portname"])
+                    lun_id = str(new_boot_config["lun_id"])
+                    print("[+] LUN ID: {}".format(lun_id))
+                    rd += ' --loadlun {}'.format(lun_id)
                     rd += ' --dedicate {}'.format(new_boot_config["fcp_id"])
 
-                # --DUCK--
-                print("[+] BOOT CONFIG: {}".format(new_boot_config))
     
             else:
                 rd += (' --ipl %s' % self._get_ipl_param(ipl_from))

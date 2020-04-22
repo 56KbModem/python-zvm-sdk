@@ -283,8 +283,8 @@ class FCPDbOperator(object):
             'connections    integer,',  # 0 means no assigner
             'reserved       integer,',  # 0 for not reserved
             'path           integer,',  # 0 or path0, 1 for path1
-            'lun_id         integer,',
-            'portname       integer,',
+            'lun_id         varchar(16),',
+            'portname       varchar(16),',
             'comment        varchar(128))'))
         with get_fcp_conn() as conn:
             conn.execute(sql)
@@ -348,6 +348,13 @@ class FCPDbOperator(object):
                          "connections, reserved, path, comment) VALUES "
                          "(?, ?, ?, ?, ?, ?)",
                          (fcp, '', 0, 0, path, ''))
+
+    def new_dscsi(self, fcp, path, portname, lun_id):
+        with get_fcp_conn() as conn:
+            conn.execute("INSERT INTO fcp (fcp_id, assigner_id, "
+                         "connections, reserved, path, lun_id, portname, comment) VALUES "
+                         "(?, ?, ?, ?, ?, ?, ?, ?)",
+                         (fcp, '', 0, 0, path, lun_id, portname, ''))
 
     def assign(self, fcp, assigner_id):
         with get_fcp_conn() as conn:
@@ -492,7 +499,7 @@ class FCPDbOperator(object):
         with get_fcp_conn() as conn:
             result = conn.execute("SELECT portname, lun_id, fcp_id "
                                   "FROM fcp WHERE connections=0 AND reserved=0 "
-                                  "order by fcp_id")
+                                  "ORDER BY fcp_id")
 
             free_definitions = result.fetchall()
             if len(free_definitions) == 0:
@@ -515,9 +522,10 @@ class FCPDbOperator(object):
             # check if we already have free 
             # WWPN/LUN/FCP pairs to use 
             # for direct SCSI
-            result = conn.execute("SELECT portname, lun_id, fcp_id FROM fcp where reserved=0 "
+            result = conn.execute("SELECT portname, lun_id, fcp_id FROM fcp WHERE reserved=0 "
                                   "AND connections=0")
             is_free = result.fetchall()
+            # -- DUCK --
             if not is_free:
                 # The database has no WWPN or LUN definitions
                 # we will scan the SAN fabric / update DB
@@ -528,9 +536,10 @@ class FCPDbOperator(object):
                             index = 0
                             if boot_triplets[adapter][wwpn]: # exempt empty lists
                                 for lun in boot_triplets[adapter][wwpn]:
-                                    conn.execute("INSERT INTO fcp (portname, lun_id) VALUES "
-                                                 "(?, ?) WHERE portname IS NULL AND lun_id IS NULL "
-                                                 "AND reserved=0", (wwpn, lun,))
+									self.new_dscsi(adapter, 0, wwpn, lun)
+#                                    conn.execute("INSERT INTO fcp (portname, lun_id) VALUES "
+#                                                 "(?, ?) WHERE portname IS NULL AND lun_id IS NULL "
+#                                                 "AND reserved=0", (wwpn, lun,))
 
                     return self._return_directSCSI(userid)
 
